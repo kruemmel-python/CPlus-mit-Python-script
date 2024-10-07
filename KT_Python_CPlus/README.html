@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installation von Python3 und Boost.Python in Visual Studio</title>
+</head>
+<body>
+    <h1>Installation von Python3 und Boost.Python in Visual Studio</h1>
+    <h2>1. Vorbereitungen</h2>
+    <p>Stelle sicher, dass du <strong>vcpkg</strong> installiert hast, um die notwendigen Bibliotheken für Python und Boost.Python zu installieren.</p>
+
+    <h2>2. Python3 und Boost.Python installieren</h2>
+    <pre>
+C:\vcpkg> vcpkg install python3:x64-windows
+C:\vcpkg> vcpkg install boost-python:x64-windows
+    </pre>
+    <p>Mit diesen Befehlen werden Python3 und Boost.Python für die x64-Windows-Plattform installiert.</p>
+
+    <h2>3. Visual Studio Projekt erstellen</h2>
+    <ol>
+        <li>
+            Öffne Visual Studio und lege ein neues Projekt an:
+            <ul>
+                <li>Wähle <strong>C++</strong> als Sprache.</li>
+                <li>Lege ein <strong>leeres Projekt</strong> an.</li>
+                <li>Gib dem Projekt einen geeigneten Namen.</li>
+            </ul>
+        </li>
+        <li>Erstelle eine neue Datei <code>main.cpp</code> im Projektverzeichnis.</li>
+        <li>Kopiere den folgenden Beispielcode in die <code>main.cpp</code>:</li>
+    </ol>
+
+    <pre><code class="language-cpp">#include &lt;Python.h&gt;
+#include &lt;boost/python.hpp&gt;
+#include &lt;iostream&gt;
+
+using namespace boost::python;
+
+// Funktion in C++ zur Durchführung einer Berechnung
+int berechnung(int a, int b) {
+    return a * b;  // Einfache Multiplikation in C++
+}
+
+int main() {
+    // Python-Interpreter initialisieren
+    Py_Initialize();  // Standard-Initialisierung ohne PyConfig
+
+    try {
+        // Berechnung in C++ durchführen
+        int ergebnis = berechnung(5, 10);  // Beispielwerte
+
+        // Python-Skript laden und Ergebnis übergeben
+        object main_module = import("__main__");
+        object main_namespace = main_module.attr("__dict__");
+
+        // Erstelle eine Python-Variable mit dem berechneten Ergebnis aus C++
+        main_namespace["ergebnis"] = ergebnis;
+
+        // Führe Python-Code aus, der das Ergebnis weiterverarbeitet
+        exec(R"(
+def weiterverarbeiten(zahl):
+    print(f'Das Ergebnis aus C++ ist: {zahl}')
+    # Beispiel für weitere Python-Berechnungen
+    verarbeiteter_wert = zahl + 100
+    print(f'Nach Weiterverarbeitung in Python: {verarbeiteter_wert}')
+weiterverarbeiten(ergebnis)
+        )", main_namespace);
+
+    }
+    catch (error_already_set) {
+        PyErr_Print();
+    }
+
+    // Python-Interpreter beenden
+    Py_Finalize();
+
+    return 0;
+}</code></pre>
+
+    <h2>4. Projekteigenschaften in Visual Studio konfigurieren</h2>
+    <ol>
+        <li>
+            Gehe zu <strong>Konfigurationseigenschaften</strong> → <strong>Debuggen</strong> und setze unter <strong>Umgebung</strong> die folgenden Variablen:
+            <pre>
+PYTHONHOME=C:\vcpkg\installed\x64-windows\tools\python3;
+PYTHONPATH=C:\vcpkg\installed\x64-windows\tools\python3\Lib;C:\vcpkg\installed\x64-windows\tools\python3\DLLs;
+PATH=%PATH%;C:\vcpkg\installed\x64-windows\tools\python3
+            </pre>
+        </li>
+        <li>
+            Gehe zu <strong>Konfigurationseigenschaften</strong> → <strong>C/C++</strong> → <strong>Allgemein</strong> und setze unter <strong>Zusätzliche Includeverzeichnisse</strong>:
+            <pre>
+C:\vcpkg\installed\x64-windows\include\python3.11;
+C:\vcpkg\installed\x64-windows\tools\python3
+            </pre>
+        </li>
+        <li>
+            Gehe zu <strong>Konfigurationseigenschaften</strong> → <strong>Linker</strong> → <strong>Allgemein</strong> und setze unter <strong>Zusätzliche Bibliotheksverzeichnisse</strong>:
+            <pre>
+C:\vcpkg\installed\x64-windows\libs;
+C:\vcpkg\installed\x64-windows\tools\python3
+            </pre>
+        </li>
+    </ol>
+
+    <h2>5. Projekteinstellungen auf Release konfigurieren</h2>
+    <p>Stelle sicher, dass dein Projekt auf die <strong>Release-Konfiguration</strong> eingestellt ist und die Plattform auf <strong>x64</strong> (siehe Bild).</p>
+
+    <h2>6. Projekt ausführen</h2>
+    <p>Nachdem du die oben genannten Schritte ausgeführt hast, drücke <strong>Strg + F5</strong>, um das Projekt zu kompilieren und auszuführen.</p>
+    <p>Die Ausgabe sollte Folgendes anzeigen:</p>
+    <pre>
+Das Ergebnis aus C++ ist: 50
+Nach Weiterverarbeitung in Python: 150
+    </pre>
+
+    <h2>Hinweis</h2>
+    <p>Falls Fehler auftreten, stelle sicher, dass alle Pfade korrekt gesetzt sind und dass <strong>Python3</strong> und <strong>Boost.Python</strong> korrekt über <strong>vcpkg</strong> installiert wurden.</p>
+</body>
+</html>
